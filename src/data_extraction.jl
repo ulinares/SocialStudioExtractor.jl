@@ -1,8 +1,4 @@
-using HTTP
-using JSON3
-using Dates
-using TimeZones
-
+# API data extraction functionality
 
 const API_URL = "https://api.socialstudio.radian6.com/"
 
@@ -12,6 +8,7 @@ mutable struct SocialStudioClient
     token::String
     refresh_token::String
 end
+
 
 """
 Initialize a Social Studio Client.
@@ -30,9 +27,11 @@ function make_url(endpoint::String)
     return API_URL * lstrip(endpoint, '/')
 end
 
+
 function make_headers(ss::SocialStudioClient, kwargs...)
     return Dict("access_token" => ss.token, "Accept" => "application/json", kwargs...)
 end
+
 
 function authorize_client!(ss::SocialStudioClient, username::String, password::String)
     url = make_url("oauth/token")
@@ -52,6 +51,7 @@ function authorize_client!(ss::SocialStudioClient, username::String, password::S
     nothing
 end
 
+
 function refresh_client!(ss::SocialStudioClient)
     url = make_url("oauth/token")
     params = Dict(
@@ -70,6 +70,7 @@ function refresh_client!(ss::SocialStudioClient)
     nothing
 end
 
+
 function get_workspaces(ss::SocialStudioClient)
     url = make_url("v1/workspaces")
     headers = make_headers(ss)
@@ -79,10 +80,12 @@ function get_workspaces(ss::SocialStudioClient)
     return json_resp["response"]
 end
 
+
 function filter_workspaces_data(workspaces_list::AbstractArray, workspace_name::String)
     workspaces = [workspace for workspace in workspaces_list if contains(workspace["name"], workspace_name)]
     return workspaces
 end
+
 
 function get_topics(ss::SocialStudioClient, workspace_group_id::String, kwargs...)
     url = make_url("v3/topics")
@@ -103,6 +106,7 @@ function filter_topics_data(topics_list::AbstractArray, topic_title::String)
     ]
     return topics
 end
+
 
 function recursive_posts_request(ss::SocialStudioClient, params::Dict)
     url = make_url("v3/posts")
@@ -127,6 +131,7 @@ function recursive_posts_request(ss::SocialStudioClient, params::Dict)
     return deduplicate_posts_list(posts_list), meta
 end
 
+
 function parse_date(date::String, tz::String; end_date = false)
     year, month, day = [parse(Int, i) for i in split(date, "-")]
     timezone = TimeZone(tz)
@@ -144,11 +149,13 @@ function parse_date(date::String, tz::String; end_date = false)
     return Int(timestamp * 1000)
 end
 
+
 function deduplicate_posts_list(posts_list::AbstractArray)
     deduplicated = Dict(post["id"] => post for post in posts_list)
 
     return collect(values(deduplicated))
 end
+
 
 function get_posts(ss::SocialStudioClient; topics_id_list::Array, start_date::String, end_date::String, tz::String, kwargs...)
     url = make_url("v3/posts")
@@ -165,5 +172,14 @@ function get_posts(ss::SocialStudioClient; topics_id_list::Array, start_date::St
     )
 
     return recursive_posts_request(ss, params)
+end
 
+
+function get_media_types(ss::SocialStudioClient)
+    url = make_url("v3/mediaTypes")
+    headers = make_headers(ss)
+    resp = HTTP.get(url, headers)
+    json_resp = JSON3.read(resp.body)
+
+    return json_resp["data"]
 end
