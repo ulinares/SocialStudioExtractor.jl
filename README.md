@@ -1,6 +1,6 @@
 # SocialStudioExtractor.jl
 
-A simple package for extract data from the Social Studio API (Salesforce) in Julia.
+A simple package for extracting data from the Social Studio API (Salesforce) in Julia.
 
 **Package in development, not ready for production.**
 
